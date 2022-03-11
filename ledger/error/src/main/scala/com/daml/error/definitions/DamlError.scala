@@ -12,6 +12,7 @@ import scala.jdk.CollectionConverters._
 class DamlError(
     override val cause: String,
     override val throwableO: Option[Throwable] = None,
+    extraContext: Map[String, Any] = Map(),
 )(implicit
     override val code: ErrorCode,
     loggingContext: ContextualizedErrorLogger,
@@ -19,6 +20,9 @@ class DamlError(
 
   // Automatically log the error on generation
   loggingContext.logError(this, Map())
+
+  override def context: Map[String, String] =
+    super.context ++ extraContext.view.mapValues(_.toString)
 
   def asGrpcStatus: Status =
     code.asGrpcStatus(this)(loggingContext)
@@ -46,10 +50,11 @@ class DamlErrorWithDefiniteAnswer(
     override val cause: String,
     override val throwableO: Option[Throwable] = None,
     val definiteAnswer: Boolean = false,
+    extraContext: Map[String, Any] = Map(),
 )(implicit
     override val code: ErrorCode,
     loggingContext: ContextualizedErrorLogger,
-) extends DamlError(cause = cause, throwableO = throwableO) {
+) extends DamlError(cause = cause, throwableO = throwableO, extraContext = extraContext) {
 
   final override def definiteAnswerO: Option[Boolean] = Some(definiteAnswer)
 
